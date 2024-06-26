@@ -1,7 +1,0 @@
-# Eclipse/STS
-.settings/
-.classpath
-.project
-
-# Maven
-/target/
