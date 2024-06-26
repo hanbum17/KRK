@@ -12,7 +12,7 @@ import lombok.ToString;
 @AllArgsConstructor
 @ToString
 public class MyAuthorityVO {
-	
+	///////////
 	private String userid ;
 	private String authority ;
 
