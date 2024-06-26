@@ -5,7 +5,7 @@
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %><!-- 추가 -->
 <c:set var="contextPath" value="${pageContext.request.contextPath}" /><!-- 추가 -->
 <%@ include file="./myinclude/myheader.jsp" %><!-- 추가 -->
-<div id="page-wrapper">
+<div id="page-wrapper"><!---->
     <div class="row">
 	    <div class="col-lg-12">
 		    <h3 class="page-header">Welcome, My Home World!!!</h3>
