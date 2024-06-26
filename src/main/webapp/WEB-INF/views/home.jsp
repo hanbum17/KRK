@@ -32,7 +32,7 @@
 		    </h3>
 	    </div>
     </div>
-    <p> 현재 시간은, <strong>${serverTime}</strong>입니다 </p>
+    <p> 현재 시간은, <strong>${serverTime}</strong>입니다람쥐 </p>
 
 </div><%-- /.page-wrapper --%>
 
