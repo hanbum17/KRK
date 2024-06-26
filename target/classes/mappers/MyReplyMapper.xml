@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.spring5legacy.mypro00.mapper.MyReplyMapper">
+
+    <!-- 댓글 목록 조회 (paging) -->
+    <select id="selectReplyList" resultType="com.spring5legacy.mypro00.domain.MyReplyVO">
+        <![CDATA[
+            SELECT RN, LVL, RNO, RCONTENT, RWRITER, RREGDATE, RMODDATE, BNO, PRNO, RDELFLAG
+            FROM (
+                WITH reply (LVL, RNO, PRNO, BNO, RREGDATE, RCONTENT, RWRITER, RMODDATE, RDELFLAG) AS (
+                    SELECT 1 LVL, A.RNO, A.PRNO, A.BNO, A.RREGDATE, A.RCONTENT, A.RWRITER, A.RMODDATE, A.RDELFLAG
+                    FROM myuser.tbl_myreply A
+                    WHERE A.bno = #{bno} AND A.PRNO IS NULL
+                    UNION ALL
+                    SELECT A.LVL + 1, B.RNO, B.PRNO, B.BNO, B.RREGDATE, B.RCONTENT, B.RWRITER, B.RMODDATE, B.RDELFLAG
+                    FROM reply A JOIN myuser.tbl_myreply B ON B.PRNO = A.RNO
+                    WHERE B.bno = #{bno}
+                )
+                SEARCH DEPTH FIRST BY RNO DESC, RREGDATE DESC SET mySort
+                SELECT ROWNUM RN, LVL, RNO, PRNO, BNO, RREGDATE, RCONTENT, RWRITER, RMODDATE, RDELFLAG
+                FROM reply
+                ORDER BY mySort
+            )
+            WHERE RN BETWEEN ((#{pageNum} - 1) * #{rowAmountPerPage} + 1) AND (#{pageNum} * #{rowAmountPerPage})
+        ]]>
+    </select>
+    
+
+    <select id="selectReplyByRno" parameterType="Long" resultType="com.spring5legacy.mypro00.domain.MyReplyVO">
+        SELECT RNO, PRNO, BNO, RREGDATE, RCONTENT, RWRITER, RMODDATE, RDELFLAG
+        FROM myuser.tbl_myreply
+        WHERE rno = #{rno}
+    </select>
+
+    <!-- 특정 게시물에 대한 댓글 개수 -->
+    <select id="selectReplyTotal" resultType="Long">
+        SELECT COUNT(*) FROM myuser.tbl_myreply WHERE bno = #{bno}
+    </select>
+
+    <!-- 댓글 등록 -->
+    <insert id="insertComment" parameterType="com.spring5legacy.mypro00.domain.MyReplyVO">
+        <selectKey keyProperty="rno" order="BEFORE" resultType="Long">
+            SELECT myuser.seq_myreply.NEXTVAL FROM dual
+        </selectKey>
+        INSERT INTO myuser.tbl_myreply (rno, rcontent, rwriter, rregDate, bno, prno, rdelFlag)
+        VALUES (#{rno}, #{rcontent}, #{rwriter}, DEFAULT, #{bno}, NULL, DEFAULT)
+    </insert>
+
+    <!-- 답글 등록 -->
+    <insert id="insertReply" parameterType="com.spring5legacy.mypro00.domain.MyReplyVO">
+        <selectKey keyProperty="rno" order="BEFORE" resultType="Long">
+            SELECT myuser.seq_myreply.NEXTVAL FROM dual
+        </selectKey>
+        INSERT INTO myuser.tbl_myreply (rno, rcontent, rwriter, rregDate, bno, prno, rdelFlag)
+        VALUES (#{rno}, #{rcontent}, #{rwriter}, DEFAULT, #{bno}, #{prno}, DEFAULT)
+    </insert>
+
+    <!-- 특정 댓글/답글 수정 -->
+    <update id="updateComment" parameterType="com.spring5legacy.mypro00.domain.MyReplyVO">
+        UPDATE myuser.tbl_myreply
+        SET rcontent = #{rcontent}, rmodDate = DEFAULT
+        WHERE bno = #{bno} AND rno = #{rno}
+    </update>
+
+    <!-- 특정 댓글/답글 조회 -->
+    <select id="selectReply" resultType="com.spring5legacy.mypro00.domain.MyReplyVO">
+        SELECT rno, rcontent, rwriter, rregDate, bno, prno, rdelFlag
+        FROM myuser.tbl_myreply
+        WHERE bno = #{bno} AND rno = #{rno}
+    </select>
+
+    <!-- 특정 댓글/답글 블라인드 처리 -->
+    <update id="updateBlindFlag">
+        UPDATE myuser.tbl_myreply
+        SET rdelFlag = #{blindFlag}
+        WHERE bno = #{bno} AND rno = #{rno}
+    </update>
+
+    <!-- 특정 게시물의 모든 댓글 및 답글 삭제 -->
+    <delete id="deleteRepliesByBoard">
+        DELETE FROM myuser.tbl_myreply
+        WHERE bno = #{bno}
+    </delete>
+
+    <!-- 특정 댓글/답글 삭제 -->
+    <delete id="deleteComment">
+        DELETE FROM myuser.tbl_myreply
+        WHERE bno = #{bno} AND rno = #{rno}
+    </delete>
+
+    <!-- 답글 개수 업데이트 -->
+    <update id="updateReplyCnt">
+        UPDATE myuser.tbl_myreply 
+        SET replyCnt = replyCnt + #{amt}
+        WHERE rno = #{prno}
+    </update>
+
+    <!-- 자식 댓글/답글 조회 -->
+    <select id="selectChildren" resultType="com.spring5legacy.mypro00.domain.MyReplyVO">
+        SELECT rno, rcontent, rwriter, rregDate, bno, prno, rdelFlag
+        FROM myuser.tbl_myreply
+        WHERE bno = #{bno} AND prno = #{rno}
+    </select>
+    
+
+</mapper>

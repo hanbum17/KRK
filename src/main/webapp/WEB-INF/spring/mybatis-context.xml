@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mybatis-spring="http://mybatis.org/schema/mybatis-spring"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://mybatis.org/schema/mybatis-spring http://mybatis.org/schema/mybatis-spring.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd">
+
+	<!-- 1. jdbc.properties 파일에서 읽어 들이는 설정 -->
+	<context:property-placeholder location="classpath:jdbc_properties/jdbc.properties"/>
+
+	<!-- 2. HikariConfig 빈을 통해 읽어들인 정보를 설정, 설정값 형식이 JSTL 표현식과 유사 -->
+	<bean id="hikariConfig" class="com.zaxxer.hikari.HikariConfig">
+		<property name="driverClassName" value="${myuser.oracle.jdbc.hikari.driverClassName}"/>
+		<property name="jdbcUrl" value="${myuser.oracle.jdbc.hikari.jdbcUrl}"/>
+		<property name="username" value="${myuser.oracle.jdbc.hikari.username}"/>
+		<property name="password" value="${myuser.oracle.jdbc.hikari.password}"/>
+	</bean>
+
+	<!-- 3. HikariDataSource 클래스를 이용한 dataSource 빈 생성 -->
+	<bean class="com.zaxxer.hikari.HikariDataSource" id="dataSource" destroy-method="close">
+		<constructor-arg ref="hikariConfig"/>
+	</bean>
+
+	<!-- Mybatis와 오라클 RDBMS 연결: mybatis-spring 라이브러리를 이용함 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource"/>
+		<property name="mapperLocations">
+			<list><!-- 여러 경로에 매퍼파일이 존재할 경우, list 요소 사용 -->
+				<value>classpath:mappers/MyBoardMapper.xml</value>
+				<value>classpath:mappers/MyBoardAttachFileMapper.xml</value>
+				<value>classpath:mappers/MyScheduledMapper.xml</value>
+				<value>classpath:mappers/MyReplyMapper.xml</value>
+				<value>classpath:mappers/MyMemberMapper.xml</value>
+			</list>
+		</property>
+	</bean>
+
+	<!-- SqlSessionTemplate 빈 설정: SqlSessionFactoryBean 빈을 주입 받음 -->
+	<bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+		<constructor-arg index="0" ref="sqlSessionFactory"/>
+	</bean>
+
+	<mybatis-spring:scan base-package="com.spring5legacy.mypro00.mapper" template-ref="sqlSession"/>
+	
+	<!-- 스프링 트랜잭션 빈 설정 -->
+	<!-- dataSource 빈을 주입받아야 하므로, dataSource 빈이 설정된 스프링 빈 구성 설정 파일에 빈 정의를 추가 -->
+	<bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource"/>
+	</bean>
+	<!-- 스프링 트랜잭션 기능 활성화(@Transaction 어노테이션 기능을 활성화) DataSourceTransactionManager 빈 사용 -->
+	<tx:annotation-driven transaction-manager="txManager"/>
+	
+
+</beans>

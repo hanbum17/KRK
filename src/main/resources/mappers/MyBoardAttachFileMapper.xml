@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.spring5legacy.mypro00.mapper.MyBoardAttachFileMapper">
+
+    <!-- 10번 게시물의 모든 첨부파일 정보 조회 -->
+    <select id="selectAttachFiles" resultType="com.spring5legacy.mypro00.domain.MyBoardAttachFileVO">
+        SELECT UUID, UPLOADPATH, FILENAME, FILETYPE, BNO, FILEDELFLAG
+        FROM myuser.tbl_myattachfiles
+        WHERE BNO = #{bno}
+    </select>
+
+    <!-- 첨부파일 정보 입력 -->
+    <insert id="insertAttachFile">
+        INSERT INTO myuser.tbl_myattachfiles (UUID, UPLOADPATH, FILENAME, FILETYPE, BNO, FILEDELFLAG)
+        VALUES (#{uuid}, #{uploadPath}, #{fileName}, #{fileType}, #{bno}, #{fileDelFlag})
+    </insert>
+
+    <!-- 10번 게시물의 모든 첨부파일 삭제 -->
+    <delete id="deleteAttachFiles">
+        DELETE FROM myuser.tbl_myattachfiles
+        WHERE BNO = #{bno}
+    </delete>
+
+    <!-- 10번 게시물의 모든 첨부파일 블라인드처리 -->
+    <update id="updateSetFileDelFlag">
+        UPDATE myuser.tbl_myattachfiles
+        SET FILEDELFLAG = 1
+        WHERE BNO = #{bno}
+    </update>
+
+    <!-- 특정 첨부파일 한 개 정보 삭제 -->
+    <delete id="deleteAttachFile">
+        DELETE FROM myuser.tbl_myattachfiles
+        WHERE UUID = #{uuid}
+    </delete>
+
+</mapper>

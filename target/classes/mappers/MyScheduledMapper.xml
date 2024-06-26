@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.spring5legacy.mypro00.mapper.MyBoardAttachFileMapper">
+<!-- 하루 전 날짜의 모든 첨부파일 정보: (현재) 06-13 이라면 06-12 날짜의 업로드 파일 정보 표시(시간 무시됨) -->   
+	<select id="selectAttachFilesDuringBeforeOneDay" resultType="com.spring5legacy.mypro00.domain.MyBoardAttachFileVO">
+		SELECT UUID, UPLOADPATH, FILENAME, FILETYPE, BNO, FILEDELFLAG
+		FROM myuser.TBL_MYATTACHFILES
+		WHERE UPLOADPATH = TO_CHAR(sysdate-3, 'YYYY/MM/DD');
+	
+	
+	</select>
+    
+
+</mapper>
