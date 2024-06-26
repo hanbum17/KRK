@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.spring5legacy.mypro00.mapperhr.MyBoardAttachFileMapperHr">
+
+    <select id="selectAttachFiles" resultType="com.spring5legacy.mypro00.domain.MyBoardAttachFileVO">
+        SELECT UUID, UPLOADPATH, FILENAME, FILETYPE, BNO, FILEDELFLAG
+        FROM myuser.tbl_myAttachFiles
+        WHERE bno = #{bno}     
+    </select>
+    
+    <insert id="insertAttachFile">
+        INSERT INTO myuser.tbl_myAttachFiles
+        VALUES (#{uuid}, #{uploadPath}, #{fileName}, ${fileType}, ${bno}, DEFAULT)    
+    </insert>
+    
+    <delete id="deleteAttachFiles">
+        DELETE FROM myuser.tbl_myAttachFiles WHERE bno = #{bno}     
+    </delete>
+    
+    
+    <update id="updateSetFileDelFlag">
+        UPDATE myuser.tbl_myAttachFiles SET fileDelFlag = 1 WHERE bno = #{bno}     
+    </update>
+    
+    <delete id="deleteAttachFile">
+        DELETE FROM myuser.tbl_myAttachFiles WHERE uuid = #{uuid}    
+    </delete>
+
+	
+</mapper>

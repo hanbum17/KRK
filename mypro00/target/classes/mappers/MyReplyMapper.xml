@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.spring5legacy.mypro00.mapper.MyReplyMapper">
+
+<!-- 특정 게시물 댓글/답글 목록 조회(오라클 계층쿼리 이용) --><!-- 
+    <select id="selectMyReplyList" resultType="com.spring5legacy.mypro00.domain.MyReplyVO"> 
+    <![CDATA[
+        SELECT LEVEL AS lvl, rno, rcontent, rwriter, rregDate, rmodDate, bno, prno, rdelFlag
+        FROM ( 	SELECT /*+ INDEX (tbl_myreply IDX_BNO_RNO_REPLY) */ *
+                FROM myuser.tbl_myreply 
+                WHERE bno = #{bno} ) 
+        START WITH prno IS NULL
+        CONNECT BY PRIOR rno = prno
+        ORDER SIBLINGS BY RregDate DESC
+    ]]>
+    </select> -->
+
+<!-- 특정 게시물의 댓글/답글 목록 조회(ANSI-SQL, Recursive With문 이용) --><!-- 
+    <select id="selectReplyList" resultType="com.spring5legacy.mypro00.domain.MyReplyVO" >
+    <![CDATA[
+        WITH REPLY (LVL, rno, rcontent, rwriter, rregdate, rmoddate, bno, prno, rdelflag)
+        AS ( SELECT 1 LVL, a.rno, a.rcontent, a.rwriter, a.rregdate, a.rmoddate, a.bno, a.prno, a.rdelflag
+             FROM myuser.tbl_myreply a
+             WHERE a.bno=#{bno} AND a.prno IS NULL
+             UNION ALL
+             SELECT a.LVL + 1 LVL, b.rno, b.rcontent, b.rwriter, b.rregdate, b.rmoddate, b.bno, b.prno, b.rdelflag 
+             FROM REPLY a JOIN (SELECT * FROM myuser.tbl_myreply c WHERE c.bno = #{bno}) b ON (a.rno = b.prno)
+           )
+        SEARCH DEPTH FIRST BY rno desc SET sort_order
+        SELECT ROWNUM RN, LVL, rno, rcontent, rwriter, rregdate, rmoddate, bno, prno, rdelflag
+        FROM REPLY 
+        ORDER BY sort_order 
+    ]]>
+    </select> -->
+    
+    
+<!-- 특정 게시물에 대한 댓글 목록 조회: 페이징 고려 -->
+<select id="selectMyReplyList" 
+        resultType="com.spring5legacy.mypro00.domain.MyReplyVO"
+        parameterType="com.spring5legacy.mypro00.common.paging.MyReplyPagingDTO">
+<![CDATA[
+    SELECT lvl, rno, rcontent,  rwriter, rregDate, rmodDate, bno, prno, rdelFlag
+    FROM ( 	SELECT /*+ INDEX(a IDX_BNO_RNO_REPLY)  */ ROWNUM rn, LEVEL lvl, a.*
+            FROM myuser.tbl_myreply a
+            WHERE bno = #{bno}
+            AND ROWNUM <= (#{pageNum} * #{rowAmountPerPage})
+            START WITH prno IS NULL
+            CONNECT BY PRIOR rno = prno
+         )
+    WHERE rn >= ((#{pageNum} * #{rowAmountPerPage}) - (#{rowAmountPerPage} - 1))  
+]]>	
+</select> 
+    
+<!-- 특정 게시물의 댓글/답글 목록 조회(paging) -->
+<select id="selectReplyList" resultType="com.spring5legacy.mypro00.domain.MyReplyVO" >
+<![CDATA[
+    SELECT RN, LVL, rno, rregdate, rcontent, rwriter, rmoddate, bno, prno, rdelflag 
+    FROM (  WITH REPLY (LVL, rno, rregdate, rcontent, rwriter, rmoddate, bno, prno, rdelflag)
+            AS ( SELECT 1 LVL, a.rno, a.rregdate, a.rcontent, a.rwriter, a.rmoddate, a.bno, a.prno, a.rdelflag
+                 FROM myuser.tbl_myreply a
+                 WHERE a.bno=#{bno} AND a.prno IS NULL
+                 UNION ALL
+                 SELECT a.LVL + 1 LVL, b.rno, b.rregdate, b.rcontent, b.rwriter, b.rmoddate, b.bno, b.prno, b.rdelflag
+                 FROM REPLY a JOIN (SELECT * FROM myuser.tbl_myreply c WHERE c.bno = #{bno}) b ON (a.rno = b.prno)
+                )
+            SEARCH DEPTH FIRST BY rregDate desc, rno desc SET sort_order
+            SELECT ROWNUM RN, LVL, rno, rregdate, rcontent, rwriter, rmoddate, bno, prno, rdelflag
+            FROM REPLY 
+            WHERE ROWNUM <= (#{pageNum} * #{rowAmountPerPage})
+            ORDER BY sort_order 
+         )
+    WHERE rn >= ((#{pageNum} * #{rowAmountPerPage}) - (#{rowAmountPerPage} - 1))
+]]>
+</select>
+
+<!-- 특정 게시물에 대한 댓글 총개수 -->
+<select id="selectReplyTotal" resultType="Long" >
+    SELECT COUNT(*) FROM myuser.tbl_myreply WHERE bno = #{myReplyPagingDTO.bno}
+</select>
+    
+    
+<!-- 게시물에 대한 댓글 등록 --><!-- 
+    <insert id="insertComment" parameterType="com.spring5legacy.mypro00.domain.MyReplyVO">
+        <selectKey keyProperty="rno" order="BEFORE" resultType="Long">
+            SELECT myuser.seq_myreply.NEXTVAL FROM dual
+        </selectKey>
+        INSERT INTO myuser.tbl_myReply
+        VALUES (#{rno}, #{rcontent},#{rwriter}, DEFAULT, DEFAULT, #{bno}, DEFAULT, DEFAULT)
+    </insert> -->
+<!-- 댓글에 대한 답글 등록 --><!-- 
+    <insert id="insertReply" parameterType="com.spring5legacy.mypro00.domain.MyReplyVO">
+        <selectKey keyProperty="rno" order="BEFORE" resultType="Long">
+            SELECT myuser.seq_myreply.NEXTVAL FROM dual
+        </selectKey>
+        INSERT INTO myuser.tbl_myReply
+        VALUES (#{rno}, #{rcontent},#{rwriter}, DEFAULT, DEFAULT, #{bno}, #{prno}, DEFAULT)
+    </insert>--> 
+    
+<!-- 특정 게시물에 대한 댓글/답글 등록 -->
+    <insert id="insertReply" parameterType="com.spring5legacy.mypro00.domain.MyReplyVO">
+        <selectKey keyProperty="rno" order="BEFORE" resultType="Long">
+            SELECT myuser.seq_myreply.NEXTVAL FROM dual
+        </selectKey>
+        INSERT INTO myuser.tbl_myReply
+    <choose>
+    <when test="prno != null">
+        VALUES (#{rno}, #{rcontent},#{rwriter}, DEFAULT, DEFAULT, #{bno}, #{prno}, DEFAULT)
+    </when>
+    <otherwise>
+        VALUES (#{rno}, #{rcontent}, #{rwriter}, DEFAULT, DEFAULT, #{bno}, DEFAULT, DEFAULT)
+    </otherwise>
+    </choose>
+    </insert>
+
+<!-- 특정 게시물에 대한 특정 댓글/답글 수정 -->
+    <update id="updateReply" parameterType="com.spring5legacy.mypro00.domain.MyReplyVO">
+        UPDATE myuser.tbl_myreply
+        SET rcontent = #{rcontent} ,
+            rmodDate = DEFAULT
+        WHERE bno = #{bno} AND rno = #{rno}
+    </update>
+    
+<!-- 특정 게시물에 대한 특정 댓글/답글 삭제요청: 블라인드 처리 -->
+    <update id="updateRdelFlag">
+        UPDATE myuser.tbl_myreply
+        SET rdelFlag = 1,
+            rmodDate = DEFAULT
+        WHERE bno = #{bno} AND rno = #{rno}
+    </update>
+    
+<!-- 특정 게시물에 대한 특정 댓글/답글 삭제 -->
+    <delete id="deleteReply">
+        DELETE FROM myuser.tbl_myreply 
+        WHERE rno IN ( WITH reply (rno,bno,prno)
+                       AS ( SELECT a.rno, a.bno, a.prno
+                            FROM myuser.tbl_myreply a
+                            WHERE a.rno = #{rno} 
+                            UNION ALL
+                            SELECT b.rno, b.bno, b.prno
+                            FROM reply a JOIN (SELECT c.rno, c.bno, c.prno 
+                                               FROM myuser.tbl_myreply c
+                                               WHERE c.bno = #{bno}) b 
+                                               ON(b.prno = a.rno)
+                          )
+                       SELECT rno
+                       FROM reply ) 
+    </delete>
+    
+<!-- 특정 게시물에 대한 모든 댓글/답글 삭제 -->
+    <delete id="deleteAllReply">
+        DELETE FROM myuser.tbl_myreply WHERE bno = #{bno}
+    </delete>
+
+
+<!-- 특정 게시물에 대한 특정 댓글/답글 조회 --><!-- 
+    <select id="selectReply" resultType="com.spring5legacy.mypro00.domain.MyReplyVO">
+        SELECT rno, rcontent,  rwriter, rregDate, rmodDate, bno, prno, rdelFlag
+        FROM myuser.tbl_myreply
+        WHERE bno = #{bno} AND rno = #{rno}
+	</select> -->
+
+</mapper>
