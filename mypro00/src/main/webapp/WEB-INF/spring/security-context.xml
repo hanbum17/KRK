@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:security="http://www.springframework.org/schema/security"
+	xsi:schemaLocation="http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-5.8.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd">
+
+
+
+<!-- 승인/인증을 위해 UserDetails 타입 객체를 가져오는 빈(UserDetailsService 타입 빈) -->
+<bean id="myMemberUserDetailsServiceImpl" 
+      class="com.spring5legacy.mypro00.common.security.MyMemberUserDetailsServiceImpl" />
+      
+<!-- 사용자 password 암호화 처리 빈: BCrypt 방식 암호화 -->
+<bean id="bcryptPasswordEncoder" 
+      class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder"/>
+      
+<!-- AuthenticationSuccessHandler 구현클래스 빈 등록 추가-->
+<bean id="myLoginAuthenticationSuccessHandler"
+      class="com.spring5legacy.mypro00.common.security.MyLoginAuthenticationSuccessHandler"/>
+
+<!-- AccessDeniedHandler 구현클래스 빈 등록 추가-->
+<bean id="myMemberAccessDeniedHandlerImpl"
+      class="com.spring5legacy.mypro00.common.security.MyMemberAccessDeniedHandlerImpl"/>
+
+ <!-- ___________access제약걸기__________ -->
+    <security:http> <!-- 
+    	<security:intercept-url pattern="/" method="GET" access="permitAll"/>
+    	<security:intercept-url pattern="/myboard/register" method="GET" access="isAuthenticated()"/>
+    	<security:intercept-url pattern="/myboard/list" method="GET" access="hasAnyAuthority('ADMIN','USER','ROLE_MEMBER','ROLE_MANAGER')"/>
+    	<security:intercept-url pattern="/myboard/detail" access="hasAuthority('ADMIN')"/> -->
+    																		
+    	<!-- permitAll을 사용해서 해당 url pattern은 권한 없이 사용 가능하게 만든다. -->
+    	<security:intercept-url pattern="/myboard/list" access="permitAll" method="GET"/>
+    	<security:intercept-url pattern="/myboard/register" access="isAuthenticated()" method="GET" />
+    	<security:intercept-url pattern="/myboard/register" access="isAuthenticated()" method="POST" />
+    	
+    	<!-- 로그인 여기서 설정한 parameter의 이름으로 (jsp의 name속성에서 해당되면) 값을 가져와서  -->
+        <security:form-login login-page="/myLogin" login-processing-url="/myLogin" 
+        					 password-parameter="userpw" username-parameter="userid" 
+        					 default-target-url="/" authentication-success-handler-ref="myLoginAuthenticationSuccessHandler"/>
+        					 
+        <security:logout logout-url="/mylogout" logout-success-url="/" />
+        
+        <security:remember-me data-source-ref="dataSource" 
+        					  token-validity-seconds="500000" 
+        					  remember-me-parameter="remember"/>
+        					  
+        					  
+     	<!-- <security:access-denied-handler error-page="/accessDeniedError" /> -->
+        <security:access-denied-handler ref="myMemberAccessDeniedHandlerImpl" />
+    </security:http>
+    
+    
+    
+    
+    <security:authentication-manager>
+        <security:authentication-provider user-service-ref="myMemberUserDetailsServiceImpl">
+            <security:password-encoder ref="bcryptPasswordEncoder"/>
+        </security:authentication-provider>
+    </security:authentication-manager>
+    
+    
+
+</beans>
