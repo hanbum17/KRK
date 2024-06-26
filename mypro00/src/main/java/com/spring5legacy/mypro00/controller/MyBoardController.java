@@ -37,7 +37,7 @@ public class MyBoardController {
 		this.myBoardService = myBoardService ;
 		//System.out.println("MyBoardController의 모든 필드 초기화 생성자====");
 	}
-    //치킨먹고싶다아.
+    //치킨먹고싶다아아
     	
     //게시물 목록 조회 서비스1
     @GetMapping("/list")
