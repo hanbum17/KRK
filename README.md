@@ -1,2 +1,0 @@
-# KRK
-KingLocky
